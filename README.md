@@ -2,6 +2,11 @@
 
 The is a skeleton project that contains an express server and a sqllite database. The overall objective is to create the backend to power a stripped down version of Fizz.
 
+## 🔗 Links
+
+- **GitHub Repository**: [https://github.com/arnavchokshi/fizz-backend-interview](https://github.com/arnavchokshi/fizz-backend-interview)
+- **Docker Hub**: [https://hub.docker.com/r/achokshi38/fizz-interview-backend](https://hub.docker.com/r/achokshi38/fizz-interview-backend)
+
 Your goal is to create a set of APIs that allow for:
 
 - add/create a user (no password needed)
@@ -28,12 +33,11 @@ Please read TODOs in **all files** and finish TODOs. When you are finished, send
 
 **High-Level Approach:**
 I structured the solution using a service layer architecture with clear separation of concerns. The application follows a three-tier architecture: route handlers (server.ts), service layer (business logic), and database layer (Drizzle ORM). Key design decisions include:
-- Service-based architecture for maintainability and testability
 - Middleware for cross-cutting concerns (rate limiting, validation, user authentication)
 - Cursor-based pagination for efficient feed retrieval
 - Composite indexes on frequently queried columns (schoolId + createdAt for posts)
 - Two feed algorithms: time-based (newest) and engagement-based (trending using votes and comments)
-- Consistent error handling with structured error responses
+- Redis caching for rate limiting
 - Type-safe database queries using Drizzle ORM with TypeScript
 
 **AI Tools Usage:**
@@ -45,15 +49,18 @@ I used AI tools primarily for initial architecture design and later for code rev
 - Automated edge case detection and error handling improvements
 
 **What didn't work well:**
-- Sometimes added unnecessary indexes or outdated patterns (promises instead of async/await)
-- Occasionally included redundant validation checks without full context
+- Sometimes added unnecessary indexes or created an over complex a solution
+- Occasionally included redundant validation checks and not take full context of other files validations
 - Required careful review to ensure AI suggestions aligned with the actual requirements
 
+**Improvemnets if given more time**
+As the backend was running SQLlite and I didnt want to go overboard, I decided not to use a redis cache for posts, and limitied redis to only caching rate limits. Also given more data it would be really fun to come up with a more advanced feed algorithm.
 
 
 
 
-## Setup & Running
+
+**Setup & Running**
 
 ### Prerequisites
 - Have Docker Desktop installed and open
