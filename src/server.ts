@@ -1,6 +1,3 @@
-// Load environment variables from .env file
-import 'dotenv/config';
-
 // Import type definitions to extend Express Request
 import './types/express';
 
