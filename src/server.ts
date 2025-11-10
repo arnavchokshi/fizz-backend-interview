@@ -1,4 +1,3 @@
-// Import type definitions to extend Express Request
 import './types/express';
 
 import express from 'express';
