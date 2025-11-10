@@ -10,6 +10,7 @@ import { createUser, getUserById } from './services/userService';
 import { createPost, getPostById } from './services/postService';
 import { createComment, getCommentsByPostId } from './services/commentService';
 import { getNewestFeed, getTrendingFeed } from './services/feedService';
+import { createSchool } from './services/schoolService';
 
 const app = express();
 const port = 3000;
@@ -35,6 +36,21 @@ app.get("/", (req, res) => {
   res.send("Fizz Backend");
 });
 
+// POST /schools - Create a new school
+app.post('/schools', async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: { message: 'name is required', statusCode: 400 } });
+    }
+    const school = await createSchool(name);
+    res.status(201).json(school);
+  } catch (error: any) {
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Internal server error';
+    res.status(statusCode).json({ error: { message, statusCode } });
+  }
+});
 
 // POST /users - Create a new user
 app.post('/users', async (req, res) => {

@@ -49,28 +49,23 @@ async function checkContentModeration(text: string): Promise<string | null> {
 
 Content to analyze: "${text}"
 
-Check for violations in these categories:
-- hate (hate speech or slurs)
-- hate/threatening (threatening hate speech)
-- harassment (personal attacks or bullying)
-- harassment/threatening (threatening harassment)
-- self-harm (discusses or glorifies self-harm)
-- self-harm/intent (indicates self-harm intent)
-- self-harm/instructions (contains self-harm instructions)
-- sexual (explicit sexual material)
-- sexual/minors (sexual content with minors)
-- violence (promotes or depicts violence)
-- violence/graphic (graphic violence)
-- illicit (advice on committing illicit acts)
-- illicit/violent (advice on illicit acts involving violence or weapons)
+Check if the content contains:
+- Harmful speech targeting groups
+- Threats or intimidation
+- Personal attacks or bullying
+- Self-harm references
+- Explicit adult content
+- Graphic descriptions of harm
+- Instructions for illegal activities
+- Any other content inappropriate for a student platform
 
 Respond ONLY with a JSON object in this exact format:
 {
   "flagged": true/false,
-  "category": "exact_category_key" or null
+  "category": "category_name" or null
 }
 
-Use the exact category key from the list above. If content is appropriate, set flagged to false. If inappropriate, set flagged to true and provide the exact category key.`;
+If content is appropriate, set flagged to false. If inappropriate, set flagged to true and provide a brief category name.`;
 
     const response = await client.chat.completions.create({
       model: model,
@@ -99,6 +94,15 @@ Use the exact category key from the list above. If content is appropriate, set f
       console.error(`[Moderation] Authentication failed - check GITHUB_TOKEN and 'models:read' permission`);
     } else if (err.status === 429) {
       console.error(`[Moderation] Rate limit hit`);
+    } else if (err.status === 400 && err.message?.includes('content management policy')) {
+      // If the prompt itself is filtered, try a simpler approach
+      console.warn(`[Moderation] Prompt filtered, using fallback moderation`);
+      // Fallback: check for obvious violations using simple keyword matching
+      const dangerousKeywords = ['murder', 'kill', 'weapon', 'bomb', 'terrorist', 'suicide'];
+      const lowerText = text.toLowerCase();
+      if (dangerousKeywords.some(keyword => lowerText.includes(keyword))) {
+        return "Content violates community guidelines";
+      }
     } else {
       console.error(`[Moderation] Error:`, err.message);
     }

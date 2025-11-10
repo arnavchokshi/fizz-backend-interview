@@ -100,21 +100,43 @@ export async function seedDatabase() {
       const hoursAgo = Math.random() * 24;
       const createdAt = now - (daysAgo * oneDay + hoursAgo * oneHour);
 
-      const recencyFactor = Math.max(0, 1 - daysAgo / maxDaysAgo);
-      const baseVotes = Math.floor(Math.random() * 100) - 20;
-      const netVotes = Math.floor(baseVotes * (0.3 + 0.7 * recencyFactor) + Math.random() * 20);
-      
-      // Convert net votes to upvotes and downvotes
-      // If netVotes is positive, we have more upvotes. If negative, more downvotes.
-      const totalEngagement = Math.abs(netVotes) + Math.floor(Math.random() * 20);
-      const upvotes = netVotes >= 0 
-        ? totalEngagement + Math.floor(Math.random() * 10)
-        : Math.floor(Math.random() * 10);
-      const downvotes = netVotes < 0
-        ? totalEngagement + Math.floor(Math.random() * 10)
-        : Math.floor(Math.random() * 10);
+      // Upvote distribution:
+      // 50% of posts: 0-750 upvotes
+      // 25% of posts: 750-1.5k upvotes
+      // 25% of posts: 1.5k-2.5k upvotes
+      const upvoteRandom = Math.random();
+      let upvotes: number;
+      if (upvoteRandom < 0.5) {
+        // 50%: 0-750 upvotes
+        upvotes = Math.floor(Math.random() * 751);
+      } else if (upvoteRandom < 0.75) {
+        // 25%: 750-1.5k upvotes
+        upvotes = Math.floor(750 + Math.random() * 751);
+      } else {
+        // 25%: 1.5k-2.5k upvotes
+        upvotes = Math.floor(1500 + Math.random() * 1001);
+      }
 
-      const commentsCount = Math.floor(Math.max(0, netVotes) * (0.2 + Math.random() * 0.2));
+      // Downvotes are typically a small percentage of upvotes (0-5% with some variation)
+      const downvoteRatio = Math.random() * 0.05; // 0-5% of upvotes
+      const downvotes = Math.floor(upvotes * downvoteRatio + Math.random() * 10);
+
+      // Comment distribution:
+      // 40% of posts: 0 comments
+      // 40% of posts: 2-3 comments
+      // 20% of posts: 8+ comments
+      const commentRandom = Math.random();
+      let commentsCount: number;
+      if (commentRandom < 0.4) {
+        // 40%: 0 comments
+        commentsCount = 0;
+      } else if (commentRandom < 0.8) {
+        // 40%: 2-3 comments
+        commentsCount = Math.floor(2 + Math.random() * 2); // 2 or 3
+      } else {
+        // 20%: 8+ comments (let's make it 8-15 for realism)
+        commentsCount = Math.floor(8 + Math.random() * 8); // 8-15
+      }
 
       const content = postTemplates[Math.floor(Math.random() * postTemplates.length)] + ` #${i}`;
       const mediaUrl = mediaUrls[Math.floor(Math.random() * mediaUrls.length)];
@@ -128,7 +150,7 @@ export async function seedDatabase() {
         createdAt,
         upvotes,
         downvotes,
-        commentsCount: Math.max(0, commentsCount),
+        commentsCount,
       });
     }
 
@@ -139,18 +161,38 @@ export async function seedDatabase() {
       await db.insert(posts).values(batch);
     }
 
-    // Create comments
+    // Create comments - more realistic Fizz-style comments
     const commentTemplates = [
-      'Congrats!',
-      'Well done! 🎉',
-      'Amazing work!',
-      'That sounds great!',
-      'I agree!',
-      'Nice!',
-      'Keep it up!',
-      'Awesome!',
-      'Great job!',
-      'Love this!',
+      'facts',
+      'fr',
+      'same',
+      'this',
+      'lol',
+      'dead',
+      'accurate',
+      'facts bro',
+      'nah',
+      'cap',
+      'yup',
+      'agree',
+      'true',
+      'so real',
+      'literally',
+      'ngl',
+      'fair',
+      'valid',
+      'fr fr',
+      'on god',
+      'this is so real',
+      'big facts',
+      'no cap',
+      'say less',
+      'period',
+      'exactly',
+      '100%',
+      'preach',
+      'yesss',
+      'couldn\'t agree more',
     ];
 
     const commentsData: Array<{
@@ -167,21 +209,45 @@ export async function seedDatabase() {
     let commentId = 1;
     for (const post of postsData) {
       const numComments = post.commentsCount || 0;
-      for (let i = 0; i < numComments && i < 20; i++) {
-        const commenterId = ((commentId - 1) % 8) + 1;
-        const content = commentTemplates[Math.floor(Math.random() * commentTemplates.length)];
-        const hoursAfterPost = Math.random() * Math.min(24, (now - post.createdAt) / oneHour);
-        const commentCreatedAt = post.createdAt + hoursAfterPost * oneHour;
-        const commentNetVotes = Math.floor(Math.random() * 50) - 10;
+      
+      // Only generate comments if the post has comments
+      for (let i = 0; i < numComments; i++) {
+        // Ensure commenter is different from post author (with some randomness)
+        let commenterId = ((commentId - 1) % 8) + 1;
+        if (commenterId === post.userId) {
+          commenterId = ((commenterId) % 8) + 1;
+        }
         
-        // Convert net votes to upvotes and downvotes
-        const commentTotalEngagement = Math.abs(commentNetVotes) + Math.floor(Math.random() * 10);
-        const commentUpvotes = commentNetVotes >= 0
-          ? commentTotalEngagement + Math.floor(Math.random() * 5)
-          : Math.floor(Math.random() * 5);
-        const commentDownvotes = commentNetVotes < 0
-          ? commentTotalEngagement + Math.floor(Math.random() * 5)
-          : Math.floor(Math.random() * 5);
+        const content = commentTemplates[Math.floor(Math.random() * commentTemplates.length)];
+        
+        // Comments are created within a few days after the post (more recent posts get comments faster)
+        // Ensure comment is not created in the future
+        const maxDaysAfterPost = Math.min(7, (now - post.createdAt) / oneDay);
+        const daysAfterPost = Math.random() * maxDaysAfterPost;
+        const maxHoursAfterPost = Math.min(24, (now - (post.createdAt + daysAfterPost * oneDay)) / oneHour);
+        const hoursAfterPost = Math.random() * maxHoursAfterPost;
+        const commentCreatedAt = Math.min(
+          post.createdAt + (daysAfterPost * oneDay + hoursAfterPost * oneHour),
+          now
+        );
+        
+        // Comment upvotes are typically much lower than post upvotes
+        // Most comments get 0-30 upvotes, with occasional higher ones on popular posts
+        // Comments on very popular posts (1.5k+ upvotes) have a higher chance of more upvotes
+        let commentUpvotes: number;
+        if (post.upvotes >= 1500) {
+          // High engagement posts: comments can get 5-50 upvotes
+          commentUpvotes = Math.floor(5 + Math.random() * 46);
+        } else if (post.upvotes >= 750) {
+          // Medium engagement posts: comments can get 2-25 upvotes
+          commentUpvotes = Math.floor(2 + Math.random() * 24);
+        } else {
+          // Lower engagement posts: comments typically get 0-15 upvotes
+          commentUpvotes = Math.floor(Math.random() * 16);
+        }
+        
+        // Comments rarely have downvotes, but if they do, it's minimal (0-3)
+        const commentDownvotes = Math.random() < 0.15 ? Math.floor(Math.random() * 4) : 0;
 
         commentsData.push({
           id: commentId++,

@@ -2,6 +2,7 @@ import { db } from '../../db/db';
 import { users, type User } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 
+//creating a user 
 export async function createUser(
   name: string,
   schoolId: number
@@ -31,6 +32,7 @@ export async function createUser(
   }
 }
 
+//getting a user by id
 export async function getUserById(userId: number): Promise<User | null> {
   const [user] = await db
     .select()
