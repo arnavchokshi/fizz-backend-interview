@@ -49,7 +49,7 @@ I used AI tools primarily for initial architecture design and later for code rev
 - Required careful review to ensure AI suggestions aligned with the actual requirements
 
 **Improvemnets if given more time**
-As the backend was running SQLlite and I didnt want to go overboard, I decided not to use a redis cache for posts, and limitied redis to only caching rate limits. Also, if given more data, it would be really fun to come up with a more advanced feed algorithm.
+As the backend was running SQLlite and I didnt want to go overboard, I decided not to use a redis cache for posts, and limitied redis to only caching rate limits. Also, if given more data, it would be really fun to come up with a more advanced feed algorithm. I would also spend more time creating better content moderation.
 
 
 
@@ -86,9 +86,40 @@ docker exec -it fizz-redis redis-cli
 
 ## API Endpoints
 
+### Schools
+- `POST /schools` - Create a new school
+  - Body: `{ "name": "string" }`
+  - Returns: School object
+
+### Users
 - `POST /users` - Create a new user
+  - Body: `{ "name": "string", "schoolId": number }`
+  - Returns: User object
+  
+- `GET /users/:id` - Get a user by ID
+  - Returns: User object
+
+### Posts
 - `POST /posts` - Create a new post
+  - Body: `{ "userId": number, "content": "string", "mediaUrl": "string" (optional) }`
+  - Returns: Post object
+  
+- `GET /posts/:id` - Get a post and all its comments (paginated)
+  - Query params: `limit` (optional, default: 30), `cursor` (optional, timestamp for pagination)
+  - Returns: Post object with comments array and pagination info (`comments_next_cursor`, `comments_has_more`)
+
+### Comments
 - `POST /comments` - Create a new comment
-- `GET /feed/newest?userId=X&limit=30&cursor=<timestamp>` - Get newest feed (userId is used to determine which school's feed to show)
-- `GET /feed/trending?userId=X` - Get trending feed (userId is used to determine which school's feed to show)
-- `GET /posts/:id` - Get a post and all its comments
+  - Body: `{ "userId": number, "postId": number, "content": "string", "mediaUrl": "string" (optional) }`
+  - Returns: Comment object
+
+### Feed
+- `GET /feed/newest` - Get newest feed (time-based, paginated)
+  - Query params: `userId` (required), `limit` (optional, default: 30), `cursor` (optional, timestamp for pagination)
+  - Returns: Feed object with posts array, `next_cursor`, and `preload_hint`
+  - Note: userId is used to determine which school's feed to show
+  
+- `GET /feed/trending` - Get trending feed (algorithm-based)
+  - Query params: `userId` (required)
+  - Returns: Feed object with posts array
+  - Note: userId is used to determine which school's feed to show
