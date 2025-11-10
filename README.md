@@ -31,25 +31,25 @@ Please read TODOs in **all files** and finish TODOs. When you are finished, send
 ## Approach
 
 **High-Level Approach:**
-I started by researching common practices for social media architectures. Then using cursor plan feature I started thinking about each API service we would need and its appropriate data models we would use. I constracted the basic request as well as the models. Then I finally created additional pieces such as middleware files, indexes, error catches etc. to optimize and clarify approach.
+I started by researching common practices for social media architectures. Then using cursors plan feature I started thinking about each API service we would need and its appropriate data models we would use. Then I finally created additional pieces such as middleware files, indexes, error catches etc. to optimize and clarify approach.
 
 **AI Tools Usage:**
-I used AI tools primarily for initial architecture design and later for code review. ChatGPT helped me quickly design the service layer structure and understand Drizzle ORM patterns. After building the base implementation, I used Cursor to systematically review the codebase for edge cases and add comprehensive error messaging.
+I used AI tools primarily for initial architecture design and later for code review. ChatGPT helped me quickly reseach how current social media platforms have based their architecture as well as understand Drizzle ORM patterns. After building the base implementation, I used Cursor to review parts of the code for edge cases and add error logs.
 
 **What worked well:**
-- Fast iteration on database schema and service patterns
-- Quick generation of content valdiation code and data seeding scripts (It is great for creating code when given documentation)
+- Fast iteration on database schema
+- Quickly generated content valdiation code (It is great for creating code when given documentation)
+- Helped me transfer existing code to using Drizzle ORM 
 - Automated edge case detection and error handling improvements
+- Helped me quickly make an instalation guide (although I had to review it and cut it down as it went overboard on detail)
 
 **What didn't work well:**
-- Sometimes added unnecessary indexes or created an over complex a solution
-- Occasionally included redundant validation checks and not take full context of other files validations
+- Sometimes added unnecessary indexes (really bad for storage managment) or created an overly complex solution
+- Occasionally included redundant validation checks and did not take full context of other files validations
 - Required careful review to ensure AI suggestions aligned with the actual requirements
 
 **Improvemnets if given more time**
-As the backend was running SQLlite and I didnt want to go overboard, I decided not to use a redis cache for posts, and limitied redis to only caching rate limits. Also given more data it would be really fun to come up with a more advanced feed algorithm.
-
-
+As the backend was running SQLlite and I didnt want to go overboard, I decided not to use a redis cache for posts, and limitied redis to only caching rate limits. Also, if given more data, it would be really fun to come up with a more advanced feed algorithm.
 
 
 

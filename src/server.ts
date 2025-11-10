@@ -1,11 +1,12 @@
 import './types/express';
 
+import 'dotenv/config';
 import express from 'express';
 import { initDb } from '../db/db';
 import { validateRequest } from './middleware/contentValidation';
 import { rateLimiter } from './middleware/rateLimiter';
 import { userMiddleware } from './middleware/userMiddleware';
-import { createUser } from './services/userService';
+import { createUser, getUserById } from './services/userService';
 import { createPost, getPostById } from './services/postService';
 import { createComment, getCommentsByPostId } from './services/commentService';
 import { getNewestFeed, getTrendingFeed } from './services/feedService';
@@ -29,6 +30,12 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get("/", (req, res) => {
+  console.log("Fizz Backend");
+  res.send("Fizz Backend");
+});
+
+
 // POST /users - Create a new user
 app.post('/users', async (req, res) => {
   try {
@@ -45,6 +52,29 @@ app.post('/users', async (req, res) => {
     }
     const user = await createUser(name, schoolIdNumber);
     res.status(201).json(user);
+  } catch (error: any) {
+    const statusCode = error.statusCode || 500;
+    const message = error.message || 'Internal server error';
+    res.status(statusCode).json({ error: { message, statusCode } });
+  }
+});
+
+// GET /users/:id - Get a user by ID
+app.get('/users/:id', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id, 10);
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: { message: 'Invalid user ID', statusCode: 400 } });
+    }
+
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: { message: 'User not found', statusCode: 404 } });
+    }
+
+    res.status(200).json(user);
   } catch (error: any) {
     const statusCode = error.statusCode || 500;
     const message = error.message || 'Internal server error';

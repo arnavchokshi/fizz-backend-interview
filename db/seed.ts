@@ -132,7 +132,12 @@ export async function seedDatabase() {
       });
     }
 
-    await db.insert(posts).values(postsData);
+    // Insert posts in batches to avoid SQLite variable limit
+    const postBatchSize = 100; // Insert 100 posts at a time
+    for (let i = 0; i < postsData.length; i += postBatchSize) {
+      const batch = postsData.slice(i, i + postBatchSize);
+      await db.insert(posts).values(batch);
+    }
 
     // Create comments
     const commentTemplates = [
@@ -191,8 +196,13 @@ export async function seedDatabase() {
       }
     }
 
+    // Insert comments in batches to avoid SQLite variable limit
     if (commentsData.length > 0) {
-      await db.insert(comments).values(commentsData);
+      const batchSize = 100; // Insert 100 comments at a time
+      for (let i = 0; i < commentsData.length; i += batchSize) {
+        const batch = commentsData.slice(i, i + batchSize);
+        await db.insert(comments).values(batch);
+      }
     }
 
     console.log('✅ Database seeded successfully!');

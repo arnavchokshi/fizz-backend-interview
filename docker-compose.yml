@@ -20,11 +20,16 @@ services:
     container_name: fizz-app
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
       - REDIS_URL=redis://redis:6379
       - NODE_ENV=production
       - PORT=3000
       - DB_PATH=/app/data/mydb.sqlite
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GITHUB_MODELS_ENDPOINT=${GITHUB_MODELS_ENDPOINT:-https://models.github.ai/inference}
     depends_on:
       redis:
         condition: service_healthy
