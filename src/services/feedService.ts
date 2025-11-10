@@ -41,7 +41,7 @@ export async function getNewestFeed(
 
 /**
  * Get trending feed - algorithm-based sorting
- * Fetches all posts, calculates scores, sorts by trending score
+ * Fetches all posts in past week, calculates scores, sorts by trending score
  */
 export async function getTrendingFeed(
   schoolId: number
@@ -62,27 +62,43 @@ export async function getTrendingFeed(
 }
 
 /**
- * Calculate trending score: (Engagement × Velocity) × 50% + Recency × 50%
+ * Calculate trending score: (Normalized Engagement × Velocity) × Recency
+ * 
+ * Example: Post with 500 upvotes, 100 downvotes, 5 comments, 2 hours old
+ * 1. voteScore = max(|400|, 600×0.5) = 400
+ * 2. totalEngagement = 400 + 5×10 = 450
+ * 3. normalizedEngagement = 450 / 2 = 225 per hour
+ * 4. velocityBonus = 1.0 + min(225/100, 0.5) = 1.5x (fast-rising)
+ * 5. recencyFactor = exp(-2/12) ≈ 0.85
+ * 6. Final score = 225 × 1.5 × 0.85 ≈ 287
  */
 function calculateTrendingScore(post: Post): number {
   const now = Date.now();
   const hoursOld = (now - post.createdAt) / (1000 * 60 * 60);
 
-  // Engagement: votes (1x) + comments (10x), normalized by time
-  const totalEngagement = Math.abs(post.votes) + post.commentsCount * 10;
-  const baseEngagementScore = totalEngagement / Math.max(hoursOld + 1, 0.5);
+  // Step 1: Calculate vote score
+  const voteCount = post.upvotes - post.downvotes;
+  const totalVoteEngagement = post.upvotes + post.downvotes;
+  const voteScore = Math.max(
+    Math.abs(voteCount),           // Polarized: 1000/0 or 0/1000
+    totalVoteEngagement * 0.5      // Controversial: 1000/1000
+  );
+  
+  // Step 2: Add comments (10x weight)
+  const totalEngagement = voteScore + post.commentsCount * 10;
 
-  // Velocity bonus: up to 2x for fast-rising posts (first 6 hours)
+  // Step 3: Normalize by time (engagement per hour)
+  const perHourEngagement = totalEngagement / Math.max(hoursOld, 0.75);
+
+  // Step 4: Velocity bonus for fast-rising posts (< 6 hours)
   let velocityBonus = 1.0;
   if (hoursOld < 6) {
-    const engagementRate = totalEngagement / Math.max(hoursOld, 0.1);
-    velocityBonus = 1.0 + Math.min(engagementRate / 10, 1.0);
+    velocityBonus = 1.5 + Math.min(perHourEngagement / 100, 0.5);
   }
 
-  // Recency: exponential decay (1.0 for new, ~0.37 at 24h)
-  const recencyScore = Math.exp(-hoursOld / 24);
+  // Step 5: Recency decay
+  const recencyFactor = Math.exp(-hoursOld / 12);
 
-  // Final score: 50% engagement, 50% recency
-  const adjustedEngagementScore = baseEngagementScore * velocityBonus;
-  return adjustedEngagementScore * 0.5 + recencyScore * 0.5;
+  // Step 6: Final score
+  return perHourEngagement * velocityBonus * recencyFactor;
 }

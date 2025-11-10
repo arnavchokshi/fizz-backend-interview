@@ -5,6 +5,8 @@ export const schools = sqliteTable('schools', {
   name: text('name').notNull().unique(),
 });
 
+export type School = typeof schools.$inferSelect;
+
 export const users = sqliteTable(
   'users',
   {
@@ -13,9 +15,7 @@ export const users = sqliteTable(
     schoolId: integer('schoolId').notNull().references(() => schools.id),
     createdAt: integer('createdAt').notNull(),
   },
-  (table) => ({
-    schoolIdIdx: index('idx_users_schoolId').on(table.schoolId),
-  })
+  (table) => ({})
 );
 
 export type User = typeof users.$inferSelect;
@@ -29,7 +29,8 @@ export const posts = sqliteTable(
     content: text('content').notNull(),
     mediaUrl: text('mediaUrl'),
     createdAt: integer('createdAt').notNull(),
-    votes: integer('votes').notNull().default(0),
+    upvotes: integer('upvotes').notNull().default(0),
+    downvotes: integer('downvotes').notNull().default(0),
     commentsCount: integer('commentsCount').notNull().default(0),
   },
   (table) => ({
@@ -51,13 +52,16 @@ export const comments = sqliteTable(
     content: text('content').notNull(),
     mediaUrl: text('mediaUrl'),
     createdAt: integer('createdAt').notNull(),
-    votes: integer('votes').notNull().default(0),
+    upvotes: integer('upvotes').notNull().default(0),
+    downvotes: integer('downvotes').notNull().default(0),
   },
   (table) => ({
-    postIdIdx: index('idx_comments_postId').on(table.postId),
+    postCreatedIdx: index('idx_comments_post_created').on(
+      table.postId,
+      table.createdAt
+    ),
   })
 );
 
 export type Comment = typeof comments.$inferSelect;
-export type School = typeof schools.$inferSelect;
 

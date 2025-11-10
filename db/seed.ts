@@ -84,7 +84,8 @@ export async function seedDatabase() {
       content: string;
       mediaUrl: string | null;
       createdAt: number;
-      votes: number;
+      upvotes: number;
+      downvotes: number;
       commentsCount: number;
     }> = [];
 
@@ -101,9 +102,19 @@ export async function seedDatabase() {
 
       const recencyFactor = Math.max(0, 1 - daysAgo / maxDaysAgo);
       const baseVotes = Math.floor(Math.random() * 100) - 20;
-      const votes = Math.floor(baseVotes * (0.3 + 0.7 * recencyFactor) + Math.random() * 20);
+      const netVotes = Math.floor(baseVotes * (0.3 + 0.7 * recencyFactor) + Math.random() * 20);
+      
+      // Convert net votes to upvotes and downvotes
+      // If netVotes is positive, we have more upvotes. If negative, more downvotes.
+      const totalEngagement = Math.abs(netVotes) + Math.floor(Math.random() * 20);
+      const upvotes = netVotes >= 0 
+        ? totalEngagement + Math.floor(Math.random() * 10)
+        : Math.floor(Math.random() * 10);
+      const downvotes = netVotes < 0
+        ? totalEngagement + Math.floor(Math.random() * 10)
+        : Math.floor(Math.random() * 10);
 
-      const commentsCount = Math.floor(Math.max(0, votes) * (0.2 + Math.random() * 0.2));
+      const commentsCount = Math.floor(Math.max(0, netVotes) * (0.2 + Math.random() * 0.2));
 
       const content = postTemplates[Math.floor(Math.random() * postTemplates.length)] + ` #${i}`;
       const mediaUrl = mediaUrls[Math.floor(Math.random() * mediaUrls.length)];
@@ -115,7 +126,8 @@ export async function seedDatabase() {
         content,
         mediaUrl,
         createdAt,
-        votes,
+        upvotes,
+        downvotes,
         commentsCount: Math.max(0, commentsCount),
       });
     }
@@ -143,7 +155,8 @@ export async function seedDatabase() {
       content: string;
       mediaUrl: string | null;
       createdAt: number;
-      votes: number;
+      upvotes: number;
+      downvotes: number;
     }> = [];
 
     let commentId = 1;
@@ -154,7 +167,16 @@ export async function seedDatabase() {
         const content = commentTemplates[Math.floor(Math.random() * commentTemplates.length)];
         const hoursAfterPost = Math.random() * Math.min(24, (now - post.createdAt) / oneHour);
         const commentCreatedAt = post.createdAt + hoursAfterPost * oneHour;
-        const commentVotes = Math.floor(Math.random() * 50) - 10;
+        const commentNetVotes = Math.floor(Math.random() * 50) - 10;
+        
+        // Convert net votes to upvotes and downvotes
+        const commentTotalEngagement = Math.abs(commentNetVotes) + Math.floor(Math.random() * 10);
+        const commentUpvotes = commentNetVotes >= 0
+          ? commentTotalEngagement + Math.floor(Math.random() * 5)
+          : Math.floor(Math.random() * 5);
+        const commentDownvotes = commentNetVotes < 0
+          ? commentTotalEngagement + Math.floor(Math.random() * 5)
+          : Math.floor(Math.random() * 5);
 
         commentsData.push({
           id: commentId++,
@@ -163,7 +185,8 @@ export async function seedDatabase() {
           content,
           mediaUrl: null,
           createdAt: commentCreatedAt,
-          votes: commentVotes,
+          upvotes: commentUpvotes,
+          downvotes: commentDownvotes,
         });
       }
     }

@@ -29,16 +29,17 @@ export async function createComment(
         content,
         mediaUrl: mediaUrl || null,
         createdAt,
-        votes: 0,
+        upvotes: 0,
+        downvotes: 0,
       })
       .returning();
 
-    // Update post's comment count (don't wait for it)
+    // Update post's comment count if comment is created successfully
     incrementCommentCount(postId).catch((err) => {
       console.error('Failed to increment comment count:', err);
     });
 
-    // Async moderation - don't wait for it, delete comment if it fails
+    // Async moderation, will auto delete comment if it detects inappropriate content
     moderateCommentAsync(comment.id, postId, content).catch((err) => {
       console.error('Failed to moderate comment:', err);
     });
@@ -57,6 +58,7 @@ export interface CommentsResponse {
   has_more: boolean;
 }
 
+// for getting comments when user clicks on a post. Paginated and ordered by createdAt
 export async function getCommentsByPostId(
   postId: number,
   limit: number = 10,

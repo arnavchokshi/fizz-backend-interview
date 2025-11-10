@@ -43,7 +43,8 @@ export async function initDb() {
       content TEXT NOT NULL,
       mediaUrl TEXT,
       createdAt INTEGER NOT NULL,
-      votes INTEGER NOT NULL DEFAULT 0,
+      upvotes INTEGER NOT NULL DEFAULT 0,
+      downvotes INTEGER NOT NULL DEFAULT 0,
       commentsCount INTEGER NOT NULL DEFAULT 0,
       FOREIGN KEY (userId) REFERENCES users(id),
       FOREIGN KEY (schoolId) REFERENCES schools(id)
@@ -59,22 +60,28 @@ export async function initDb() {
       content TEXT NOT NULL,
       mediaUrl TEXT,
       createdAt INTEGER NOT NULL,
-      votes INTEGER NOT NULL DEFAULT 0,
+      upvotes INTEGER NOT NULL DEFAULT 0,
+      downvotes INTEGER NOT NULL DEFAULT 0,
       FOREIGN KEY (postId) REFERENCES posts(id) ON DELETE CASCADE,
       FOREIGN KEY (userId) REFERENCES users(id)
     )
   `);
 
   // Create indexes with camelCase column names
+  // Index for posts: Optimizes feed queries that filter by schoolId and order by createdAt DESC
+  // Used in getPostsBySchoolId and getAllPostsBySchoolId for efficient time-based sorting
   sqlite.exec(`
     CREATE INDEX IF NOT EXISTS idx_posts_school_created ON posts(schoolId, createdAt DESC)
   `);
+  
+  // Composite index for comments: Optimizes getCommentsByPostId queries
+  // Supports filtering by postId, ordering by createdAt DESC, and cursor-based pagination
+  // This index can also be used for queries that only filter by postId (leftmost column)
+  // This index allows SQLite to efficiently filter and sort without a separate sort operation
   sqlite.exec(`
-    CREATE INDEX IF NOT EXISTS idx_comments_postId ON comments(postId)
+    CREATE INDEX IF NOT EXISTS idx_comments_post_created ON comments(postId, createdAt DESC)
   `);
-  sqlite.exec(`
-    CREATE INDEX IF NOT EXISTS idx_users_schoolId ON users(schoolId)
-  `);
+  
 
   return db;
 }

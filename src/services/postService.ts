@@ -20,12 +20,13 @@ export async function createPost(
         content,
         mediaUrl: mediaUrl || null,
         createdAt,
-        votes: 0,
+        upvotes: 0,
+        downvotes: 0,
         commentsCount: 0,
       })
       .returning();
 
-    // Async moderation - don't wait for it, delete post if it fails
+    // Async moderation. Will auto delete delete post if it detects inappropriate content
     moderatePostAsync(post.id, content).catch((err) => {
       console.error('Failed to moderate post:', err);
     });
@@ -38,16 +39,17 @@ export async function createPost(
   }
 }
 
+//getting a post by id
 export async function getPostById(postId: number): Promise<Post | null> {
   const [post] = await db
     .select()
     .from(posts)
-    .where(eq(posts.id, postId))
-    .limit(1);
+    .where(eq(posts.id, postId));
 
   return post || null;
 }
 
+//getting posts for new feed
 export async function getPostsBySchoolId(
   schoolId: number,
   limit: number = 30,
@@ -70,19 +72,22 @@ export async function getPostsBySchoolId(
   }
 }
 
+// getting posts for trending feed
 export async function getAllPostsBySchoolId(
-  schoolId: number
+  schoolId: number,
+  daysAgo: number = 7
 ): Promise<Post[]> {
-  // Get posts for a school from the past week only
-  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  // Get posts for a school from the specified number of days ago
+  const cutoffTime = Date.now() - daysAgo * 24 * 60 * 60 * 1000;
 
   return await db
     .select()
     .from(posts)
-    .where(and(eq(posts.schoolId, schoolId), gte(posts.createdAt, oneWeekAgo)))
+    .where(and(eq(posts.schoolId, schoolId), gte(posts.createdAt, cutoffTime)))
     .orderBy(desc(posts.createdAt));
 }
 
+// for when comments are added to a post
 export async function incrementCommentCount(postId: number): Promise<void> {
   await db
     .update(posts)
@@ -90,6 +95,7 @@ export async function incrementCommentCount(postId: number): Promise<void> {
     .where(eq(posts.id, postId));
 }
 
+// for when comment is removed from post (deleted by content validation)
 export async function decrementCommentCount(postId: number): Promise<void> {
   await db
     .update(posts)

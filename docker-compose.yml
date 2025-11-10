@@ -32,8 +32,6 @@ services:
       - db-data:/app/data
     restart: unless-stopped
 
-
 volumes:
   redis-data:
   db-data:
-
